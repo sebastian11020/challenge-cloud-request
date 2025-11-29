@@ -5,10 +5,7 @@ import type { RequestSummary } from "../types/request";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
-const STATUS_STYLES: Record<
-    RequestSummary["status"],
-    string
-> = {
+const STATUS_STYLES: Record<RequestSummary["status"], string> = {
     PENDIENTE:
         "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
     APROBADA:
