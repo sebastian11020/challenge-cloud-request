@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environments
+.env
+.env.*.local
+.env.local
+
+# Node modules (monorepo)
+**/node_modules/
+
+# Build output
+**/dist/
+**/build/
+
+# Prisma
+**/prisma/dev.db
+**/prisma/*.db-journal
+
+# Editor configs
+.vscode/
+.idea/
+*.swp
+
+# Docker
+docker-compose.override.yml
+docker-data/
