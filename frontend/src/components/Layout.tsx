@@ -20,7 +20,6 @@ export function Layout() {
         <div className="min-h-screen flex flex-col bg-slate-100">
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-                    {/* Logo + Nav */}
                     <div className="flex items-center gap-6">
             <span className="font-semibold text-slate-900">
               Flujo de Aprobaciones

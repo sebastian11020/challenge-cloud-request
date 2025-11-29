@@ -13,6 +13,7 @@ import NewRequest from "./pages/NewRequest.tsx";
 import DetailRequest from "./pages/DetailRequest.tsx";
 import RequestTypesPage from "./pages/RequestTypesPage";
 import ApproverRequestsPage from "./pages/ApproverRequestsPage";
+import { HistoryPage } from "./pages/HistoryPage";
 import NotFound from "./pages/NotFound";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -39,6 +40,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                             path="config/tipos-solicitud"
                             element={<RequestTypesPage />}
                         />
+                        <Route path="/history" element={<HistoryPage />} />
                         <Route path="aprobaciones" element={<ApproverRequestsPage />} />
                     </Route>
 
