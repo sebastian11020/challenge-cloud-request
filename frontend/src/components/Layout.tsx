@@ -10,6 +10,12 @@ export function Layout() {
         navigate("/login");
     };
 
+    if (!currentUser) return null;
+
+    const isSolicitante = currentUser.role === "SOLICITANTE";
+    const isAprobador = currentUser.role === "APROBADOR";
+    const isAdmin = currentUser.role === "ADMIN";
+
     return (
         <div className="min-h-screen flex flex-col bg-slate-100">
             <header className="bg-white border-b border-slate-200">
@@ -27,21 +33,37 @@ export function Layout() {
                             >
                                 Dashboard
                             </Link>
-                            <Link
-                                to="/solicitudes"
-                                className="hover:text-slate-900 transition-colors"
-                            >
-                                Solicitudes
-                            </Link>
-                            <Link
-                                to="/solicitudes/nueva"
-                                className="hover:text-slate-900 transition-colors"
-                            >
-                                Nueva solicitud
-                            </Link>
 
-                            {/* Solo visible para ADMIN */}
-                            {currentUser?.role === "ADMIN" && (
+                            {/* Menú para solicitante y admin */}
+                            {(isSolicitante || isAdmin) && (
+                                <>
+                                    <Link
+                                        to="/solicitudes"
+                                        className="hover:text-slate-900 transition-colors"
+                                    >
+                                        Mis solicitudes
+                                    </Link>
+                                    <Link
+                                        to="/solicitudes/nueva"
+                                        className="hover:text-slate-900 transition-colors"
+                                    >
+                                        Nueva solicitud
+                                    </Link>
+                                </>
+                            )}
+
+                            {/* Menú para aprobador y admin */}
+                            {(isAprobador || isAdmin) && (
+                                <Link
+                                    to="/aprobaciones"
+                                    className="hover:text-slate-900 transition-colors"
+                                >
+                                    Bandeja de aprobación
+                                </Link>
+                            )}
+
+                            {/* Configuración solo admin */}
+                            {isAdmin && (
                                 <Link
                                     to="/config/tipos-solicitud"
                                     className="hover:text-slate-900 transition-colors"
@@ -53,24 +75,22 @@ export function Layout() {
                     </div>
 
                     {/* Info de usuario + logout */}
-                    {currentUser && (
-                        <div className="flex items-center gap-3 text-sm">
-                            <div className="text-right">
-                                <p className="font-medium text-slate-900">
-                                    {currentUser.displayName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                    {currentUser.username} · {currentUser.role}
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="px-3 py-1.5 rounded-md border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                            >
-                                Cambiar usuario
-                            </button>
+                    <div className="flex items-center gap-3 text-sm">
+                        <div className="text-right">
+                            <p className="font-medium text-slate-900">
+                                {currentUser.displayName}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                                {currentUser.username} · {currentUser.role}
+                            </p>
                         </div>
-                    )}
+                        <button
+                            onClick={handleLogout}
+                            className="px-3 py-1.5 rounded-md border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Cambiar usuario
+                        </button>
+                    </div>
                 </div>
             </header>
 
