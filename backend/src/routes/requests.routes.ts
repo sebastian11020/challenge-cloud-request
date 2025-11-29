@@ -3,7 +3,7 @@ import {
     createRequest,
     getRequests,
     findRequestByIdOrPublicId,
-    changeRequestStatus,
+    changeRequestStatus, getRequestsStats,
 } from "../services/requests.service";
 import {
     parseCreateRequestDto,
@@ -59,33 +59,43 @@ router.get("/", async (req, res) => {
     }
 });
 
-/**
- * GET /api/requests/:identifier
- * Puede ser ID numérico interno o publicId (REQ-...).
- */
-router.get("/:identifier", async (req, res) => {
+router.get("/stats", async (req, res) => {
     try {
-        const { identifier } = req.params;
+        const { applicantId, responsibleId } = req.query;
 
-        const request = await findRequestByIdOrPublicId(identifier);
+        const parsedApplicantId =
+            typeof applicantId === "string" && applicantId.trim() !== ""
+                ? Number(applicantId)
+                : undefined;
 
-        if (!request) {
-            return res.status(404).json({ message: "Solicitud no encontrada" });
+        const parsedResponsibleId =
+            typeof responsibleId === "string" && responsibleId.trim() !== ""
+                ? Number(responsibleId)
+                : undefined;
+
+        if (
+            (parsedApplicantId !== undefined && Number.isNaN(parsedApplicantId)) ||
+            (parsedResponsibleId !== undefined && Number.isNaN(parsedResponsibleId))
+        ) {
+            return res
+                .status(400)
+                .json({ message: "Parámetros de filtro inválidos" });
         }
 
-        return res.json(request);
+        const stats = await getRequestsStats({
+            applicantId: parsedApplicantId,
+            responsibleId: parsedResponsibleId,
+        });
+
+        return res.json(stats);
     } catch (error) {
-        console.error("Error al obtener una solicitud:", error);
+        console.error("Error al obtener estadísticas de solicitudes:", error);
         return res
             .status(500)
-            .json({ message: "Error al obtener la solicitud" });
+            .json({ message: "Error al obtener las estadísticas" });
     }
 });
 
-/**
- * POST /api/requests
- * Crear nueva solicitud.
- */
 router.post("/", async (req, res) => {
     try {
         const dto = parseCreateRequestDto(req.body);
@@ -105,10 +115,25 @@ router.post("/", async (req, res) => {
     }
 });
 
-/**
- * POST /api/requests/:id/approve
- * Aprobar solicitud.
- */
+router.get("/:identifier", async (req, res) => {
+    try {
+        const { identifier } = req.params;
+
+        const request = await findRequestByIdOrPublicId(identifier);
+
+        if (!request) {
+            return res.status(404).json({ message: "Solicitud no encontrada" });
+        }
+
+        return res.json(request);
+    } catch (error) {
+        console.error("Error al obtener una solicitud:", error);
+        return res
+            .status(500)
+            .json({ message: "Error al obtener la solicitud" });
+    }
+});
+
 router.post("/:id/approve", async (req, res) => {
     try {
         const id = Number(req.params.id);
@@ -141,10 +166,6 @@ router.post("/:id/approve", async (req, res) => {
     }
 });
 
-/**
- * POST /api/requests/:id/reject
- * Rechazar solicitud.
- */
 router.post("/:id/reject", async (req, res) => {
     try {
         const id = Number(req.params.id);

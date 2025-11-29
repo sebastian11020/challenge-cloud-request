@@ -40,7 +40,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                             path="config/tipos-solicitud"
                             element={<RequestTypesPage />}
                         />
-                        <Route path="/history" element={<HistoryPage />} />
+                        <Route path="historial" element={<HistoryPage />} />
                         <Route path="aprobaciones" element={<ApproverRequestsPage />} />
                     </Route>
 

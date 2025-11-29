@@ -7,6 +7,11 @@ import {
 } from "./email.service";
 import { logRequestEvent } from "./history.service";
 
+interface RequestStatsFilters {
+    applicantId?: number;
+    responsibleId?: number;
+}
+
 export async function createRequest(input: CreateRequestDto) {
     const {
         title,
@@ -263,3 +268,38 @@ export async function changeRequestStatus(params: {
 
     return updated;
 }
+
+export async function getRequestsStats(filters: RequestStatsFilters = {}) {
+    const { applicantId, responsibleId } = filters;
+
+    console.log("📊 getRequestsStats() filters:", filters);
+
+    const where: any = {};
+
+    if (applicantId !== undefined) {
+        where.applicantId = applicantId;
+    }
+
+    if (responsibleId !== undefined) {
+        where.responsibleId = responsibleId;
+    }
+
+    console.log("📊 getRequestsStats() where:", where);
+
+    const [total, pending, approved, rejected] = await Promise.all([
+        prisma.request.count({ where }),
+        prisma.request.count({ where: { ...where, status: RequestStatus.PENDIENTE } }),
+        prisma.request.count({ where: { ...where, status: RequestStatus.APROBADA } }),
+        prisma.request.count({ where: { ...where, status: RequestStatus.RECHAZADA } }),
+    ]);
+
+    console.log("📊 getRequestsStats() result:", { total, pending, approved, rejected });
+
+    return {
+        total,
+        pending,
+        approved,
+        rejected,
+    };
+}
+

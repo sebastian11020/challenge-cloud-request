@@ -1,4 +1,3 @@
-// src/pages/HistoryPage.tsx
 import React, { useEffect, useState } from "react";
 import type { HistoryEvent, RequestHistoryAction } from "../types/history";
 
@@ -8,7 +7,7 @@ interface Filters {
     from: string;
     to: string;
 }
-
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 const actionLabels: Record<RequestHistoryAction, string> = {
     CREATED: "Creación",
     STATUS_CHANGED: "Cambio de estado",
@@ -52,8 +51,8 @@ export const HistoryPage: React.FC = () => {
 
             const queryString = params.toString();
             const url = queryString
-                ? `/api/history?${queryString}`
-                : "/api/history";
+                ? `${API_URL}/api/history?${queryString}`
+                : `${API_URL}/api/history`;
 
             const res = await fetch(url);
             if (!res.ok) {
@@ -71,7 +70,6 @@ export const HistoryPage: React.FC = () => {
 
     useEffect(() => {
         fetchHistory();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function handleInputChange(
@@ -96,7 +94,6 @@ export const HistoryPage: React.FC = () => {
             from: "",
             to: "",
         });
-        // recarga sin filtros
         fetchHistory();
     }
 
