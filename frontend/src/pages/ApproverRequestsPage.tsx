@@ -1,60 +1,26 @@
-import { useEffect, useState } from "react";
+// pages/ApproverRequestsPage.tsx
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import type { RequestSummary } from "../types/request";
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-
-const STATUS_STYLES: Record<RequestSummary["status"], string> = {
-    PENDIENTE:
-        "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
-    APROBADA:
-        "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
-    RECHAZADA:
-        "bg-rose-50 text-rose-700 ring-1 ring-rose-100",
-};
+import { useApproverRequests } from "../hooks/useApproverRequests";
+import { ApproverInboxTable } from "../components/approver/ApproverInboxTable";
+import { ApproverHistoryTable } from "../components/approver/ApproverHistoryTable";
 
 export default function ApproverRequestsPage() {
     const { currentUser } = useUser();
     const navigate = useNavigate();
 
-    const [requests, setRequests] = useState<RequestSummary[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [pendingPage, setPendingPage] = useState(1);
+    const [historyPage, setHistoryPage] = useState(1);
 
     if (!currentUser) return null;
     if (currentUser.role !== "APROBADOR" && currentUser.role !== "ADMIN") {
         return <Navigate to="/dashboard" replace />;
     }
 
-    useEffect(() => {
-        const fetchRequests = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const res = await fetch(
-                    `${API_URL}/api/requests?responsibleId=${currentUser.id}`
-                );
-                if (!res.ok) {
-                    throw new Error("Error al obtener solicitudes asignadas");
-                }
-                const data: RequestSummary[] = await res.json();
-                setRequests(data);
-            } catch (err) {
-                console.error(err);
-                setError(
-                    "No se pudieron cargar las solicitudes asignadas. Intenta nuevamente."
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        void fetchRequests();
-    }, [currentUser.id]);
-
-    const pending = requests.filter((r) => r.status === "PENDIENTE");
-    const history = requests.filter((r) => r.status !== "PENDIENTE");
+    const { pending, history, loading, error } = useApproverRequests(
+        currentUser.id
+    );
 
     const handleRowClick = (id: number) => {
         navigate(`/solicitudes/${id}`);
@@ -62,6 +28,7 @@ export default function ApproverRequestsPage() {
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <header className="flex items-center justify-between gap-3">
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">
@@ -71,13 +38,14 @@ export default function ApproverRequestsPage() {
                         Revisa y gestiona las solicitudes que te han sido asignadas.
                     </p>
                 </div>
-                <div className="text-right text-[11px] text-slate-400">
-                    <div className="font-medium text-slate-700">
-                        {currentUser.displayName}
-                    </div>
-                    <div>
-                        {currentUser.username} · {currentUser.role}
-                    </div>
+
+                <div className="flex flex-col items-end text-[11px] text-slate-400">
+          <span className="font-medium text-slate-700">
+            {currentUser.displayName}
+          </span>
+                    <span>
+            {currentUser.username} · {currentUser.role}
+          </span>
                 </div>
             </header>
 
@@ -104,59 +72,13 @@ export default function ApproverRequestsPage() {
                     </div>
                 )}
 
-                {!loading && pending.length > 0 && (
-                    <div className="max-h-[320px] overflow-y-auto">
-                        <table className="min-w-full text-sm">
-                            <thead className="bg-slate-50 text-xs text-slate-500 border-b border-slate-100">
-                            <tr>
-                                <th className="px-3 py-2 text-left font-medium">ID</th>
-                                <th className="px-3 py-2 text-left font-medium">Título</th>
-                                <th className="px-3 py-2 text-left font-medium">Tipo</th>
-                                <th className="px-3 py-2 text-left font-medium">
-                                    Solicitante
-                                </th>
-                                <th className="px-3 py-2 text-right font-medium">Creada</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {pending.map((req) => (
-                                <tr
-                                    key={req.id}
-                                    className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70 cursor-pointer"
-                                    onClick={() => handleRowClick(req.id)}
-                                >
-                                    <td className="px-3 py-2 align-top font-mono text-xs text-slate-700">
-                                        {req.publicId}
-                                    </td>
-                                    <td className="px-3 py-2 align-top">
-                                        <div className="text-sm font-medium text-slate-900 line-clamp-2">
-                                            {req.title}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 align-top text-xs text-slate-600">
-                                        <div className="font-medium">
-                                            {req.requestType.name}
-                                        </div>
-                                        <div className="font-mono text-[11px] text-slate-400">
-                                            {req.requestType.code}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 align-top text-xs text-slate-600">
-                                        <div className="font-medium">
-                                            {req.applicant.displayName}
-                                        </div>
-                                        <div className="text-[11px] text-slate-400">
-                                            {req.applicant.username}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 align-top text-right text-xs text-slate-500">
-                                        {new Date(req.createdAt).toLocaleString()}
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                {!loading && !error && pending.length > 0 && (
+                    <ApproverInboxTable
+                        requests={pending}
+                        page={pendingPage}
+                        onPageChange={setPendingPage}
+                        onRowClick={handleRowClick}
+                    />
                 )}
             </section>
 
@@ -177,63 +99,21 @@ export default function ApproverRequestsPage() {
                     </div>
                 )}
 
-                {!loading && history.length > 0 && (
-                    <div className="max-h-[320px] overflow-y-auto">
-                        <table className="min-w-full text-sm">
-                            <thead className="bg-slate-50 text-xs text-slate-500 border-b border-slate-100">
-                            <tr>
-                                <th className="px-3 py-2 text-left font-medium">ID</th>
-                                <th className="px-3 py-2 text-left font-medium">Título</th>
-                                <th className="px-3 py-2 text-left font-medium">Tipo</th>
-                                <th className="px-3 py-2 text-left font-medium">Estado</th>
-                                <th className="px-3 py-2 text-right font-medium">
-                                    Última actualización
-                                </th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {history.map((req) => (
-                                <tr
-                                    key={req.id}
-                                    className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70 cursor-pointer"
-                                    onClick={() => handleRowClick(req.id)}
-                                >
-                                    <td className="px-3 py-2 align-top font-mono text-xs text-slate-700">
-                                        {req.publicId}
-                                    </td>
-                                    <td className="px-3 py-2 align-top">
-                                        <div className="text-sm font-medium text-slate-900 line-clamp-2">
-                                            {req.title}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 align-top text-xs text-slate-600">
-                                        <div className="font-medium">
-                                            {req.requestType.name}
-                                        </div>
-                                        <div className="font-mono text-[11px] text-slate-400">
-                                            {req.requestType.code}
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2 align-top">
-                      <span
-                          className={
-                              "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold " +
-                              STATUS_STYLES[req.status]
-                          }
-                      >
-                        {req.status}
-                      </span>
-                                    </td>
-                                    <td className="px-3 py-2 align-top text-right text-xs text-slate-500">
-                                        {new Date(req.createdAt).toLocaleString()}
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                {!loading && !error && history.length > 0 && (
+                    <ApproverHistoryTable
+                        requests={history}
+                        page={historyPage}
+                        onPageChange={setHistoryPage}
+                        onRowClick={handleRowClick}
+                    />
                 )}
             </section>
+
+            {loading && (
+                <p className="text-sm text-slate-500">
+                    Cargando solicitudes asignadas...
+                </p>
+            )}
         </div>
     );
 }

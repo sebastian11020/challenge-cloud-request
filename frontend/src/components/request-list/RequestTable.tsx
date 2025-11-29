@@ -18,8 +18,6 @@ export function RequestTable({
                              }: Props) {
     const total = requests.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-    // Nos aseguramos de no salirnos de rango
     const currentPage = Math.min(Math.max(page, 1), totalPages);
 
     const startIndex = (currentPage - 1) * pageSize;

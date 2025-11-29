@@ -12,7 +12,7 @@ export default function RequestList() {
     const [requests, setRequests] = useState<RequestSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1); // 👈 paginación
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         if (!currentUser) return;

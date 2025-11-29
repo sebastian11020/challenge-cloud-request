@@ -73,3 +73,13 @@ export async function changeRequestStatusApi(params: {
         comment: comment?.trim() || undefined,
     });
 }
+
+export async function getApproverRequests(params: {
+    responsibleId: number;
+}): Promise<RequestSummary[]> {
+    const searchParams = new URLSearchParams();
+    searchParams.set("responsibleId", String(params.responsibleId));
+
+    const path = `/api/requests?${searchParams.toString()}`;
+    return apiGet<RequestSummary[]>(path);
+}
