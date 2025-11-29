@@ -1,5 +1,5 @@
-import { apiGet } from "./apiClient";
-import type {RequestSummary} from "../types/request.ts";
+import { apiGet, apiPost } from "./apiClient";
+import type { RequestSummary, RequestDetail } from "../types/request";
 
 export interface RequestStats {
     total: number;
@@ -7,6 +7,7 @@ export interface RequestStats {
     approved: number;
     rejected: number;
 }
+
 export async function getRequestStats(params?: {
     applicantId?: number;
     responsibleId?: number;
@@ -45,4 +46,30 @@ export async function getMyRequests(params: {
     const path = `/api/requests${query ? `?${query}` : ""}`;
 
     return apiGet<RequestSummary[]>(path);
+}
+
+export async function getRequestDetail(
+    idOrPublicId: string | number
+): Promise<RequestDetail> {
+    const path = `/api/requests/${idOrPublicId}`;
+    return apiGet<RequestDetail>(path);
+}
+
+export async function changeRequestStatusApi(params: {
+    requestId: number;
+    target: "approve" | "reject";
+    actorId: number;
+    comment?: string;
+}): Promise<RequestDetail> {
+    const { requestId, target, actorId, comment } = params;
+
+    const path =
+        target === "approve"
+            ? `/api/requests/${requestId}/approve`
+            : `/api/requests/${requestId}/reject`;
+
+    return apiPost<RequestDetail>(path, {
+        actorId,
+        comment: comment?.trim() || undefined,
+    });
 }
