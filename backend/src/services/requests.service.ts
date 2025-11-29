@@ -73,3 +73,35 @@ export async function createRequest(input: CreateRequestDto) {
 
     return request;
 }
+
+export async function getRequests(params: {
+    applicantId?: number;
+    responsibleId?: number;
+}) {
+    const { applicantId, responsibleId } = params;
+
+    const where: any = {};
+
+    if (typeof applicantId === "number") {
+        where.applicantId = applicantId;
+    }
+
+    if (typeof responsibleId === "number") {
+        where.responsibleId = responsibleId;
+    }
+
+    return prisma.request.findMany({
+        where,
+        orderBy: {
+            createdAt: "desc",
+        },
+        include: {
+            requestType: true,
+            applicant: true,
+            responsible: true,
+            history: {
+                orderBy: { createdAt: "asc" },
+            },
+        },
+    });
+}
