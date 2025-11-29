@@ -6,17 +6,78 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id          Int      @id @default(autoincrement())
-  username    String   @unique
-  displayName String
-  role        UserRole
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 enum UserRole {
   SOLICITANTE
   APROBADOR
   ADMIN
+}
+
+enum RequestStatus {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique
+  email       String   @unique
+  displayName String
+  role        UserRole
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requestsComoSolicitante Request[] @relation("RequestsSolicitante")
+  requestsComoResponsable Request[] @relation("RequestsResponsable")
+
+  historialAcciones RequestHistory[] @relation("RequestHistoryActor")
+}
+
+model Request {
+  id            Int           @id @default(autoincrement())
+  publicId      String        @unique
+  title         String
+  description   String
+  status        RequestStatus @default(PENDIENTE)
+  requestType   RequestType   @relation(fields: [requestTypeId], references: [id])
+  requestTypeId Int
+
+  applicant   User @relation("RequestsSolicitante", fields: [applicantId], references: [id])
+  applicantId Int
+
+  responsible   User @relation("RequestsResponsable", fields: [responsibleId], references: [id])
+  responsibleId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  history RequestHistory[]
+}
+
+model RequestHistory {
+  id Int @id @default(autoincrement())
+
+  request   Request @relation(fields: [requestId], references: [id])
+  requestId Int
+
+  actor   User @relation("RequestHistoryActor", fields: [actorId], references: [id])
+  actorId Int
+
+  previousStatus RequestStatus?
+  newStatus      RequestStatus
+  comment        String?
+
+  createdAt DateTime @default(now())
+}
+
+model RequestType {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // Ej: "DESPLIEGUE", "ACCESO"
+  name        String // Nombre legible: "Despliegue", "Acceso"
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requests Request[]
 }
