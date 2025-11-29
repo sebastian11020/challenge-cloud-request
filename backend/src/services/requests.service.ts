@@ -1,7 +1,7 @@
 import { prisma } from "../prisma/client";
 import type { CreateRequestDto } from "../dto/createRequest.dto";
 import { RequestStatus } from "@prisma/client";
-import { sendNewRequestNotificationEmail } from "./email.service";
+import {sendNewRequestNotificationEmail, sendRequestStatusChangeEmail} from "./email.service";
 
 export async function createRequest(input: CreateRequestDto) {
     const {
@@ -104,4 +104,86 @@ export async function getRequests(params: {
             },
         },
     });
+}
+
+export async function getRequestById(id: number) {
+    const request = await prisma.request.findUnique({
+        where: { id },
+        include: {
+            requestType: true,
+            applicant: true,
+            responsible: true,
+            history: {
+                orderBy: { createdAt: "asc" },
+                include: {
+                    actor: true,
+                },
+            },
+        },
+    });
+
+    return request;
+}
+
+export async function changeRequestStatus(params: {
+    requestId: number;
+    actorId: number;
+    targetStatus: RequestStatus;
+    comment?: string;
+}) {
+    const { requestId, actorId, targetStatus, comment } = params;
+    const request = await prisma.request.findUnique({
+        where: { id: requestId },
+        include: {
+            applicant: true,
+            responsible: true,
+        },
+    });
+
+    if (!request) {
+        throw new Error("La solicitud no existe");
+    }
+
+    if (request.status !== RequestStatus.PENDIENTE) {
+        throw new Error("Solo se pueden procesar solicitudes en estado PENDIENTE");
+    }
+    if (actorId !== request.responsibleId) {
+        throw new Error("Solo el responsable asignado puede cambiar el estado");
+    }
+
+    const updated = await prisma.request.update({
+        where: { id: requestId },
+        data: {
+            status: targetStatus,
+            history: {
+                create: {
+                    actorId,
+                    previousStatus: request.status,
+                    newStatus: targetStatus,
+                    comment: comment && comment.trim().length > 0 ? comment : null,
+                },
+            },
+        },
+        include: {
+            requestType: true,
+            applicant: true,
+            responsible: true,
+            history: {
+                orderBy: { createdAt: "asc" },
+                include: {
+                    actor: true,
+                },
+            },
+        },
+    });
+
+    await sendRequestStatusChangeEmail({
+        request: updated,
+        applicant: updated.applicant,
+        responsible: updated.responsible,
+        actorId,
+        comment,
+    });
+
+    return updated;
 }
