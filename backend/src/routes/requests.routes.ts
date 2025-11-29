@@ -1,11 +1,49 @@
 import { Router } from "express";
-import { createRequest } from "../services/requests.service";
+import {createRequest, getRequests} from "../services/requests.service";
 import {
     parseCreateRequestDto,
     CreateRequestValidationError,
 } from "../dto/createRequest.dto";
 
 const router = Router();
+
+router.get("/", async (req, res) => {
+    try {
+        const { applicantId, responsibleId } = req.query;
+
+        const parsedApplicantId =
+            typeof applicantId === "string" && applicantId.trim() !== ""
+                ? Number(applicantId)
+                : undefined;
+
+        const parsedResponsibleId =
+            typeof responsibleId === "string" && responsibleId.trim() !== ""
+                ? Number(responsibleId)
+                : undefined;
+
+        if (
+            (parsedApplicantId !== undefined && Number.isNaN(parsedApplicantId)) ||
+            (parsedResponsibleId !== undefined && Number.isNaN(parsedResponsibleId))
+        ) {
+            return res
+                .status(400)
+                .json({ message: "Parámetros de filtro inválidos" });
+        }
+
+        const requests = await getRequests({
+            applicantId: parsedApplicantId,
+            responsibleId: parsedResponsibleId,
+        });
+
+        return res.json(requests);
+    } catch (error) {
+        console.error("Error al obtener solicitudes:", error);
+        return res
+            .status(500)
+            .json({ message: "Error al obtener las solicitudes" });
+    }
+});
+
 
 router.post("/", async (req, res) => {
     try {
