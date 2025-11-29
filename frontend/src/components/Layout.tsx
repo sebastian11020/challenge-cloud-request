@@ -9,14 +9,17 @@ export function Layout() {
         setCurrentUser(null);
         navigate("/login");
     };
+
     return (
         <div className="min-h-screen flex flex-col bg-slate-100">
             <header className="bg-white border-b border-slate-200">
                 <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                    {/* Logo + Nav */}
                     <div className="flex items-center gap-6">
             <span className="font-semibold text-slate-900">
               Flujo de Aprobaciones
             </span>
+
                         <nav className="flex items-center gap-4 text-sm text-slate-700">
                             <Link
                                 to="/dashboard"
@@ -36,9 +39,20 @@ export function Layout() {
                             >
                                 Nueva solicitud
                             </Link>
+
+                            {/* Solo visible para ADMIN */}
+                            {currentUser?.role === "ADMIN" && (
+                                <Link
+                                    to="/config/tipos-solicitud"
+                                    className="hover:text-slate-900 transition-colors"
+                                >
+                                    Tipos de solicitud
+                                </Link>
+                            )}
                         </nav>
                     </div>
 
+                    {/* Info de usuario + logout */}
                     {currentUser && (
                         <div className="flex items-center gap-3 text-sm">
                             <div className="text-right">
