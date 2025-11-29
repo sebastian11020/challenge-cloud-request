@@ -1,9 +1,8 @@
-// src/services/apiClient.ts
+
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 interface ApiRequestOptions extends RequestInit {
-    // Aquí podrías extender con cosas como: authToken, signal, etc.
 }
 
 export async function apiGet<T>(path: string, options?: ApiRequestOptions): Promise<T> {
