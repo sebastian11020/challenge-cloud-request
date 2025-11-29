@@ -1,7 +1,11 @@
 import { prisma } from "../prisma/client";
 import type { CreateRequestDto } from "../dto/createRequest.dto";
 import { RequestStatus } from "@prisma/client";
-import {sendNewRequestNotificationEmail, sendRequestStatusChangeEmail} from "./email.service";
+import {
+    sendNewRequestNotificationEmail,
+    sendRequestStatusChangeEmail,
+} from "./email.service";
+import { logRequestEvent } from "./history.service";
 
 export async function createRequest(input: CreateRequestDto) {
     const {
@@ -43,12 +47,14 @@ export async function createRequest(input: CreateRequestDto) {
             requestTypeId,
             applicantId,
             responsibleId,
+            // historial relacional (Prisma)
             history: {
                 create: {
                     actorId: applicantId,
                     previousStatus: null,
                     newStatus: RequestStatus.PENDIENTE,
-                    comment: comment && comment.trim().length > 0 ? comment : null,
+                    comment:
+                        comment && comment.trim().length > 0 ? comment : null,
                 },
             },
         },
@@ -63,6 +69,24 @@ export async function createRequest(input: CreateRequestDto) {
                 },
             },
         },
+    });
+
+    // 🔎 Identificador legible del actor para Mongo (ajusta según tu modelo User)
+    const applicantIdentifier =
+        (applicant as any).email ??
+        (applicant as any).username ??
+        `user-${applicant.id}`;
+
+    // 🧾 Historial en Mongo
+    await logRequestEvent({
+        requestId: request.id,
+        action: "CREATED",
+        previousStatus: null,
+        newStatus: request.status, // RequestStatus.PENDIENTE
+        actorId: applicant.id,
+        actor: applicantIdentifier,
+        role: "SOLICITANTE",
+        comment: comment && comment.trim().length > 0 ? comment : null,
     });
 
     await sendNewRequestNotificationEmail({
@@ -106,9 +130,35 @@ export async function getRequests(params: {
     });
 }
 
-export async function getRequestById(id: number) {
-    const request = await prisma.request.findUnique({
-        where: { id },
+// 🔍 Buscar por id interno o por publicId (REQ-...)
+export async function findRequestByIdOrPublicId(identifier: string) {
+    const numericId = Number(identifier);
+
+    // 1) Intentar como id numérico
+    if (!Number.isNaN(numericId)) {
+        const byId = await prisma.request.findUnique({
+            where: { id: numericId },
+            include: {
+                requestType: true,
+                applicant: true,
+                responsible: true,
+                history: {
+                    orderBy: { createdAt: "asc" },
+                    include: {
+                        actor: true,
+                    },
+                },
+            },
+        });
+
+        if (byId) {
+            return byId;
+        }
+    }
+
+    // 2) Intentar como publicId
+    const byPublicId = await prisma.request.findUnique({
+        where: { publicId: identifier },
         include: {
             requestType: true,
             applicant: true,
@@ -122,7 +172,7 @@ export async function getRequestById(id: number) {
         },
     });
 
-    return request;
+    return byPublicId;
 }
 
 export async function changeRequestStatus(params: {
@@ -132,6 +182,7 @@ export async function changeRequestStatus(params: {
     comment?: string;
 }) {
     const { requestId, actorId, targetStatus, comment } = params;
+
     const request = await prisma.request.findUnique({
         where: { id: requestId },
         include: {
@@ -145,10 +196,15 @@ export async function changeRequestStatus(params: {
     }
 
     if (request.status !== RequestStatus.PENDIENTE) {
-        throw new Error("Solo se pueden procesar solicitudes en estado PENDIENTE");
+        throw new Error(
+            "Solo se pueden procesar solicitudes en estado PENDIENTE"
+        );
     }
+
     if (actorId !== request.responsibleId) {
-        throw new Error("Solo el responsable asignado puede cambiar el estado");
+        throw new Error(
+            "Solo el responsable asignado puede cambiar el estado"
+        );
     }
 
     const updated = await prisma.request.update({
@@ -160,7 +216,8 @@ export async function changeRequestStatus(params: {
                     actorId,
                     previousStatus: request.status,
                     newStatus: targetStatus,
-                    comment: comment && comment.trim().length > 0 ? comment : null,
+                    comment:
+                        comment && comment.trim().length > 0 ? comment : null,
                 },
             },
         },
@@ -175,6 +232,25 @@ export async function changeRequestStatus(params: {
                 },
             },
         },
+    });
+
+    // 🔎 Determinar el usuario actor (por ahora asumimos que siempre es el responsable)
+    const actorUser = updated.responsible;
+    const actorIdentifier =
+        (actorUser as any).email ??
+        (actorUser as any).username ??
+        `user-${actorUser.id}`;
+
+    // 🧾 Historial en Mongo
+    await logRequestEvent({
+        requestId: updated.id,
+        action: "STATUS_CHANGED",
+        previousStatus: request.status,
+        newStatus: updated.status,
+        actorId,
+        actor: actorIdentifier,
+        role: "RESPONSABLE", // si más adelante tienes rol APROBADOR puedes ajustarlo aquí
+        comment: comment && comment.trim().length > 0 ? comment : null,
     });
 
     await sendRequestStatusChangeEmail({
