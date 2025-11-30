@@ -1,275 +1,114 @@
-import React, { useEffect, useState } from "react";
-import type { HistoryEvent, RequestHistoryAction } from "../types/history";
+// pages/HistoryPage.tsx
+import { useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import { useHistory, type HistoryFilters } from "../hooks/useHistory";
+import { HistoryFiltersBar } from "../components/history/HistoryFiltersBar";
+import { HistoryTable } from "../components/history/HistoryTable";
+import type { RequestHistoryAction } from "../types/history";
 
-interface Filters {
-    actorId: string;
-    action: "" | RequestHistoryAction;
-    from: string;
-    to: string;
-}
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-const actionLabels: Record<RequestHistoryAction, string> = {
-    CREATED: "Creación",
-    STATUS_CHANGED: "Cambio de estado",
+const initialFilters: HistoryFilters = {
+    actorId: "",
+    action: "",
+    from: "",
+    to: "",
 };
 
-function formatDateTime(value: string) {
-    const date = new Date(value);
-    return date.toLocaleString(); // ajusta a tu formato preferido
-}
+export function HistoryPage() {
+    const { currentUser } = useUser();
+    const navigate = useNavigate();
 
-export const HistoryPage: React.FC = () => {
-    const [events, setEvents] = useState<HistoryEvent[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [filters, setFilters] = useState<Filters>({
-        actorId: "",
-        action: "",
-        from: "",
-        to: "",
-    });
-
-    async function fetchHistory() {
-        try {
-            setLoading(true);
-            setError(null);
-
-            const params = new URLSearchParams();
-
-            if (filters.actorId.trim()) {
-                params.append("actorId", filters.actorId.trim());
-            }
-            if (filters.action) {
-                params.append("action", filters.action);
-            }
-            if (filters.from) {
-                params.append("from", filters.from);
-            }
-            if (filters.to) {
-                params.append("to", filters.to);
-            }
-
-            const queryString = params.toString();
-            const url = queryString
-                ? `${API_URL}/api/history?${queryString}`
-                : `${API_URL}/api/history`;
-
-            const res = await fetch(url);
-            if (!res.ok) {
-                throw new Error("No se pudo cargar el historial");
-            }
-
-            const data: HistoryEvent[] = await res.json();
-            setEvents(data);
-        } catch (err: any) {
-            setError(err.message ?? "Error al cargar el historial");
-        } finally {
-            setLoading(false);
-        }
+    // Solo ADMIN (por menú) – reforzamos por seguridad
+    if (!currentUser || currentUser.role !== "ADMIN") {
+        return <Navigate to="/dashboard" replace />;
     }
 
-    useEffect(() => {
-        fetchHistory();
-    }, []);
+    const [filters, setFilters] = useState<HistoryFilters>(initialFilters);
+    const [appliedFilters, setAppliedFilters] =
+        useState<HistoryFilters>(initialFilters);
 
-    function handleInputChange(
+    const [page, setPage] = useState(1);
+    const pageSize = 20;
+
+    const {
+        events,
+        loading,
+        error,
+    } = useHistory(appliedFilters);
+
+    const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) {
+    ) => {
         const { name, value } = e.target;
         setFilters((prev) => ({
             ...prev,
-            [name]: value,
+            [name]:
+                name === "action"
+                    ? (value as "" | RequestHistoryAction)
+                    : value,
         }));
-    }
+    };
 
-    function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        fetchHistory();
-    }
+        setAppliedFilters(filters);
+        setPage(1);
+    };
 
-    function handleClearFilters() {
-        setFilters({
-            actorId: "",
-            action: "",
-            from: "",
-            to: "",
-        });
-        fetchHistory();
-    }
+    const handleClearFilters = () => {
+        setFilters(initialFilters);
+        setAppliedFilters(initialFilters);
+        setPage(1);
+    };
+
+    const handlePageChange = (newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleRequestClick = (requestId: number) => {
+        navigate(`/solicitudes/${requestId}`);
+    };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-4">Historial de solicitudes</h1>
-            <p className="text-sm text-gray-600 mb-6">
-                Vista completa de todas las acciones realizadas sobre las solicitudes:
-                quién hizo qué, cuándo y con qué resultado.
-            </p>
+        <div className="space-y-6">
+            {/* Encabezado de la página */}
+            <header className="flex items-center justify-between gap-3">
+                <div>
+                    <h1 className="text-xl font-semibold text-slate-900">
+                        Historial de solicitudes
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Vista global de todas las acciones realizadas sobre las solicitudes:
+                        quién hizo qué, cuándo y con qué resultado.
+                    </p>
+                </div>
+                <div className="hidden sm:flex flex-col items-end text-[11px] text-slate-400">
+          <span className="font-medium text-slate-700">
+            {currentUser.displayName}
+          </span>
+                    <span>
+            {currentUser.username} · Administrador
+          </span>
+                </div>
+            </header>
 
-            {/* Filtros */}
-            <form
+            <HistoryFiltersBar
+                filters={filters}
+                loading={loading}
+                onChange={handleInputChange}
                 onSubmit={handleSubmit}
-                className="mb-6 p-4 border rounded-lg bg-gray-50 flex flex-col gap-4"
-            >
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            ID de actor (actorId)
-                        </label>
-                        <input
-                            type="number"
-                            name="actorId"
-                            value={filters.actorId}
-                            onChange={handleInputChange}
-                            className="w-full border rounded px-3 py-2 text-sm"
-                            placeholder="Ej: 5"
-                        />
-                    </div>
+                onClear={handleClearFilters}
+            />
 
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Acción
-                        </label>
-                        <select
-                            name="action"
-                            value={filters.action}
-                            onChange={handleInputChange}
-                            className="w-full border rounded px-3 py-2 text-sm"
-                        >
-                            <option value="">Todas</option>
-                            <option value="CREATED">Creación</option>
-                            <option value="STATUS_CHANGED">Cambio de estado</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Desde
-                        </label>
-                        <input
-                            type="date"
-                            name="from"
-                            value={filters.from}
-                            onChange={handleInputChange}
-                            className="w-full border rounded px-3 py-2 text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">
-                            Hasta
-                        </label>
-                        <input
-                            type="date"
-                            name="to"
-                            value={filters.to}
-                            onChange={handleInputChange}
-                            className="w-full border rounded px-3 py-2 text-sm"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                    <button
-                        type="button"
-                        onClick={handleClearFilters}
-                        className="px-4 py-2 text-sm border rounded hover:bg-gray-100"
-                    >
-                        Limpiar
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                        Aplicar filtros
-                    </button>
-                </div>
-            </form>
-
-            {/* Estado de carga / error */}
-            {loading && (
-                <div className="text-sm text-gray-500 mb-4">
-                    Cargando historial...
-                </div>
-            )}
-            {error && (
-                <div className="text-sm text-red-600 mb-4">
-                    {error}
-                </div>
-            )}
-
-            {/* Tabla de resultados */}
-            <div className="overflow-x-auto border rounded-lg">
-                <table className="min-w-full text-sm">
-                    <thead className="bg-gray-100">
-                    <tr>
-                        <th className="px-3 py-2 text-left font-semibold">Solicitud</th>
-                        <th className="px-3 py-2 text-left font-semibold">Acción</th>
-                        <th className="px-3 py-2 text-left font-semibold">
-                            Estado anterior
-                        </th>
-                        <th className="px-3 py-2 text-left font-semibold">
-                            Estado nuevo
-                        </th>
-                        <th className="px-3 py-2 text-left font-semibold">Actor</th>
-                        <th className="px-3 py-2 text-left font-semibold">Rol</th>
-                        <th className="px-3 py-2 text-left font-semibold">Comentario</th>
-                        <th className="px-3 py-2 text-left font-semibold">Fecha / hora</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {events.length === 0 && !loading && (
-                        <tr>
-                            <td
-                                colSpan={8}
-                                className="px-3 py-4 text-center text-gray-500"
-                            >
-                                No hay eventos que coincidan con los filtros.
-                            </td>
-                        </tr>
-                    )}
-
-                    {events.map((event, index) => (
-                        <tr
-                            key={event._id ?? `${event.requestId}-${event.createdAt}-${index}`}
-                            className="border-t hover:bg-gray-50"
-                        >
-                            <td className="px-3 py-2">
-                                {/* Aquí podrías linkear al detalle de la solicitud */}
-                                <span className="text-blue-600 underline cursor-pointer">
-                    {event.requestId}
-                  </span>
-                            </td>
-                            <td className="px-3 py-2">
-                                {actionLabels[event.action] ?? event.action}
-                            </td>
-                            <td className="px-3 py-2">
-                                {event.previousStatus ?? "—"}
-                            </td>
-                            <td className="px-3 py-2">
-                                {event.newStatus}
-                            </td>
-                            <td className="px-3 py-2">
-                                <div className="flex flex-col">
-                                    <span className="font-medium">{event.actor}</span>
-                                    <span className="text-xs text-gray-500">
-                      ID: {event.actorId}
-                    </span>
-                                </div>
-                            </td>
-                            <td className="px-3 py-2">
-                                {event.role}
-                            </td>
-                            <td className="px-3 py-2 max-w-xs truncate" title={event.comment ?? ""}>
-                                {event.comment ?? "—"}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap">
-                                {formatDateTime(event.createdAt)}
-                            </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
+            <HistoryTable
+                events={events}
+                loading={loading}
+                error={error}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onRequestClick={handleRequestClick}
+            />
         </div>
     );
-};
+}
