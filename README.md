@@ -1,56 +1,61 @@
-Flujo de Aprobaciones — Ejecución en Local
+# Flujo de Aprobaciones – Ejecución Local
 
-Este documento explica cómo ejecutar el proyecto completo en ambiente local después de clonar el repositorio.
-El sistema incluye:
-
-Frontend: React + Vite + Tailwind
+Bienvenido.
+Este repositorio contiene un sistema completo de gestión de solicitudes y flujo de aprobaciones, con:
 
 Backend: Node.js + Express + Prisma
 
-Base de datos principal: PostgreSQL
+Frontend: React + Vite + TailwindCSS
+
+BD Principal: PostgreSQL
 
 Auditoría: MongoDB
 
-Notificaciones por correo con Nodemailer
+Notificaciones: SMTP (Nodemailer)
 
-Todo preparado para ejecutarse con Docker y Node.js.
+Infra Local: Docker Compose
 
-📦 1. Clonar el repositorio
+Este README explica cómo ejecutar todo en LOCAL después de clonar el repositorio.
+
+
+## Instalación
+
+### Clonar el repositorio
+
+```bash
 git clone https://github.com/usuario/flujo-aprobaciones.git
 cd flujo-aprobaciones
+```
+### Levantar bases de datos con Docker
 
-🐳 2. Levantar bases de datos con Docker
+El proyecto incluye un docker-compose.yml con:
 
-En la raíz del proyecto encontrarás un docker-compose.yml que inicia:
+PostgreSQL
 
-PostgreSQL (base de datos principal)
+MongoDB
 
-MongoDB (auditoría de historial)
+Ejecuta:   
 
-Ejecuta:
-
+```bash
 docker compose up -d
+```
 
+## Servicios
 
-Esto levantará:
+- PostgreSQL 5432 Base de datos principal
+- MongoDB 27017 Auditoría y trazabilidad
 
-Servicio	Puerto	Descripción
-PostgreSQL	5432	Base de datos principal
-MongoDB	27017	Historial de auditoría
+Comprobar 
 
-Verificar que están activos:
-
+```bash
 docker ps
+```
+## Crear archivos .env (No incluidos en el repo)
 
-🔐 3. Crear variables de entorno
+Por seguridad, los .env NO están incluidos.
+Debes crearlos manualmente:
 
-Los archivos .env NO están incluidos en el repositorio por seguridad.
-Debes crearlos manualmente siguiendo las instrucciones:
-
-📌 3.1 Backend — Crear archivo: backend/.env
-
-Dentro de la carpeta backend, crea un archivo:
-
+```bash
 DATABASE_URL=postgresql://app_user:app_password@localhost:5432/aprobaciones_db?schema=public
 
 MONGO_URL=mongodb://admin:admin123@localhost:27017/aprobaciones_history?authSource=admin
@@ -60,94 +65,58 @@ MAIL_PORT=587
 MAIL_USER=TU_CORREO@gmail.com
 MAIL_PASS=TU_CONTRASEÑA_DE_APLICACION
 MAIL_FROM="Flujo de Aprobaciones <TU_CORREO@gmail.com>"
+```
+## Frontend — frontend/.env
 
+Crear archivo:
 
-Notas:
-
-Los usuarios/contraseñas de Postgres y Mongo ya están configurados en docker-compose.yml.
-
-Para Gmail necesitas una contraseña de aplicación, no la contraseña normal.
-
-📌 3.2 Frontend — Crear archivo: frontend/.env
-
-Dentro de la carpeta frontend, crea:
-
+```bash
 VITE_API_URL=http://localhost:4000
+```
+## Instalar dependencias
 
-📦 4. Instalar dependencias
-Backend
+### Backend
+
+```bash
 cd backend
 npm install
+```
+### Frontend
 
-Frontend
+```bash
 cd ../frontend
 npm install
+```
+## Ejecutar migraciones y seed
 
-🗄 5. Ejecutar migraciones y seed
+Volver al backend:
 
-Regresa a la carpeta del backend:
-
+```bash
 cd ../backend
 npx prisma migrate deploy
 npx prisma db seed
-
-
+```
 Esto:
 
-Crea tablas en PostgreSQL
+- Crea tablas en PostgreSQL
 
-Inserta usuarios, tipos de solicitud y solicitudes de ejemplo
+- Inserta usuarios y tipos de solicitud
 
-Sincroniza historial en Mongo
+- Carga solicitudes de ejemplo
 
-▶️ 6. Ejecutar Backend y Frontend
-Backend
+- Sincroniza el historial en Mongo
+
+## Ejecutar Backend y Frontend
+### Backend
+```bash
 cd backend
 npm run dev
-
-
-Se inicia en:
-➡ http://localhost:4000
-
-Frontend
+```
+### Frontend
 
 En otra terminal:
 
+```bash
 cd frontend
 npm run dev
-
-
-Se inicia en:
-➡ http://localhost:5173
-
-🎉 7. Abrir la aplicación
-
-👉 Abre en el navegador:
-
-http://localhost:5173
-
-Desde aquí podrás:
-
-Crear solicitudes
-
-Asignar responsables
-
-Aprobar / rechazar
-
-Ver historial en tiempo real
-
-Ver estadísticas
-
-Probar envío de correos
-
-🧪 8. Pruebas recomendadas
-
-Crear solicitudes con distintos tipos
-
-Usar diferentes roles (Solicitante / Aprobador / Admin)
-
-Cambiar estados
-
-Consultar historial completo (Mongo + Prisma)
-
-Validar persistencia reiniciando contenedores (docker compose down + up)
+```
