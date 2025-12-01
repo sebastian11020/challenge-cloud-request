@@ -40,9 +40,9 @@ services:
       MONGO_URL: mongodb://admin:admin123@mongo:27017/aprobaciones_history?authSource=admin
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: 587
-      MAIL_USER: sebastiandd84@gmail.com
-      MAIL_PASS: ysomtreivkigapvk
-      MAIL_FROM: Flujo de Aprobaciones <sebastiandd84@gmail.com>
+      MAIL_USER: TU_CORREO@gmail.com
+      MAIL_PASS: TU_CONTRASEÑA_DE_APLICACION
+      MAIL_FROM: "Flujo de Aprobaciones <TU_CORREO@gmail.com>"
     networks:
       - app-network
     command: >
