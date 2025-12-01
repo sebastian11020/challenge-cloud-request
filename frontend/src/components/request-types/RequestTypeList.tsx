@@ -1,4 +1,3 @@
-// components/request-types/RequestTypeList.tsx
 import type { RequestType } from '../../types/requestType';
 
 interface RequestTypeListProps {

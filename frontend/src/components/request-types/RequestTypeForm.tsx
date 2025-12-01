@@ -1,4 +1,3 @@
-// components/request-types/RequestTypeForm.tsx
 import type { FormEvent } from 'react';
 
 export type Mode = 'create' | 'edit';

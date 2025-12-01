@@ -24,7 +24,7 @@ export default function RequestList() {
 
         const data = await getMyRequests({ applicantId: currentUser.id });
         setRequests(data);
-        setPage(1); // reset a la primera página al recargar datos
+        setPage(1);
       } catch (err: any) {
         console.error(err);
         setError(

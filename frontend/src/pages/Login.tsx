@@ -1,5 +1,3 @@
-// src/pages/Login.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../types/user';

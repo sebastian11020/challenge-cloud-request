@@ -40,8 +40,6 @@ export function StatCard({
   variant = 'primary',
 }: StatCardProps) {
   const styles = VARIANT_STYLES[variant];
-
-  // Aseguramos que el porcentaje esté entre 0 y 100
   const safePercentage =
     typeof percentage === 'number' ? Math.max(0, Math.min(100, percentage)) : undefined;
 
@@ -49,7 +47,7 @@ export function StatCard({
     <div
       className={`flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ${styles.ring} `}
     >
-      {/* Header: icono + título */}
+      {/* Header*/}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {icon && (
@@ -82,7 +80,7 @@ export function StatCard({
       {/* Texto auxiliar */}
       {helperText && <p className="text-xs text-slate-500">{helperText}</p>}
 
-      {/* Barra de progreso opcional */}
+      {/* Barra de progreso */}
       {safePercentage !== undefined && (
         <div className="mt-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">

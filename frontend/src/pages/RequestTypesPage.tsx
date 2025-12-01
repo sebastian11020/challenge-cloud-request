@@ -90,8 +90,6 @@ export default function RequestTypesPage() {
           description: form.description.trim() || undefined,
           active: form.active,
         });
-
-        // 🟢 Toast para edición
         toast.success('Tipo de solicitud actualizado correctamente');
       }
 
