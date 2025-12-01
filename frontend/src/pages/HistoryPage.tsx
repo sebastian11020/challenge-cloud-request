@@ -17,7 +17,6 @@ export function HistoryPage() {
   const { currentUser } = useUser();
   const navigate = useNavigate();
 
-  // Solo ADMIN (por menú) – reforzamos por seguridad
   if (!currentUser || currentUser.role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />;
   }

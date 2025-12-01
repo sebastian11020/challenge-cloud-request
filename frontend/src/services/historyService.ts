@@ -4,8 +4,8 @@ import type { HistoryEvent, RequestHistoryAction } from '../types/history';
 export interface HistoryFilters {
   actorId?: string;
   action?: RequestHistoryAction;
-  from?: string; // ISO date (yyyy-mm-dd)
-  to?: string; // ISO date (yyyy-mm-dd)
+  from?: string;
+  to?: string;
 }
 
 export async function fetchHistory(

@@ -12,11 +12,8 @@ export function useRequests(rawParams: RequestParams) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔥 Normalizamos el input para evitar que lleguen números sueltos
   const params =
-    typeof rawParams === 'number'
-      ? { applicantId: rawParams } // si llega un número, lo tratamos como solicitante
-      : rawParams || {}; // si llega null/undefined, lo ponemos como {}
+    typeof rawParams === 'number' ? { applicantId: rawParams } : rawParams || {};
 
   const applicantId =
     typeof params === 'object' && 'applicantId' in params
@@ -29,7 +26,6 @@ export function useRequests(rawParams: RequestParams) {
       : undefined;
 
   useEffect(() => {
-    // Nada que cargar si no hay valores
     if (!applicantId && !responsibleId) {
       setRequests([]);
       setLoading(false);

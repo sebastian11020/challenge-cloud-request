@@ -52,7 +52,6 @@ export async function createRequest(input: CreateRequestDto) {
             requestTypeId,
             applicantId,
             responsibleId,
-            // historial relacional (Prisma)
             history: {
                 create: {
                     actorId: applicantId,
@@ -132,11 +131,8 @@ export async function getRequests(params: {
     });
 }
 
-// 🔍 Buscar por id interno o por publicId (REQ-...)
 export async function findRequestByIdOrPublicId(identifier: string) {
     const numericId = Number(identifier);
-
-    // 1) Intentar como id numérico
     if (!Number.isNaN(numericId)) {
         const byId = await prisma.request.findUnique({
             where: { id: numericId },
@@ -158,7 +154,6 @@ export async function findRequestByIdOrPublicId(identifier: string) {
         }
     }
 
-    // 2) Intentar como publicId
     const byPublicId = await prisma.request.findUnique({
         where: { publicId: identifier },
         include: {
@@ -266,9 +261,6 @@ export async function changeRequestStatus(params: {
 
 export async function getRequestsStats(filters: RequestStatsFilters = {}) {
     const { applicantId, responsibleId } = filters;
-
-    console.log("📊 getRequestsStats() filters:", filters);
-
     const where: any = {};
 
     if (applicantId !== undefined) {
@@ -278,9 +270,6 @@ export async function getRequestsStats(filters: RequestStatsFilters = {}) {
     if (responsibleId !== undefined) {
         where.responsibleId = responsibleId;
     }
-
-    console.log("📊 getRequestsStats() where:", where);
-
     const [total, pending, approved, rejected] = await Promise.all([
         prisma.request.count({ where }),
         prisma.request.count({ where: { ...where, status: RequestStatus.PENDIENTE } }),

@@ -1,4 +1,3 @@
-// src/types/history.ts
 export type RequestHistoryAction = 'CREATED' | 'STATUS_CHANGED';
 
 export type RequestHistoryRole = 'SOLICITANTE' | 'RESPONSABLE' | 'APROBADOR' | 'ADMIN';

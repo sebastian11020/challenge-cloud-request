@@ -1,4 +1,3 @@
-// src/services/history.service.ts
 import {
     getHistoryCollection,
     type RequestHistoryAction,

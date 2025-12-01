@@ -28,7 +28,7 @@ export function Layout() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(125,211,252,0.18),transparent_70%)] bg-gradient-to-br from-slate-100 via-white to-slate-100">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(125,211,252,0.18),transparent_70%)] from-slate-100 via-white to-slate-100">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">

@@ -1,4 +1,3 @@
-// components/history/HistoryFiltersBar.tsx
 import type { RequestHistoryAction } from '../../types/history';
 
 export interface HistoryFiltersUi {
