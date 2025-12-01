@@ -1,6 +1,6 @@
 import { MongoClient, Db, Collection } from "mongodb";
 
-let client: MongoClient | null = null;
+let mongo: MongoClient | null = null;
 let db: Db | null = null;
 
 export type RequestHistoryAction = "CREATED" | "STATUS_CHANGED";
@@ -23,15 +23,32 @@ export interface RequestHistoryEvent {
     createdAt: Date;
 }
 
+function getMongoConfig() {
+    const uri =
+        process.env.MONGO_URI ||
+        process.env.MONGO_URL ||
+        process.env.MONGODB_URI ||
+        process.env.MONGODB_URL;
+
+    if (!uri) {
+        throw new Error(
+            "MongoDB URI no definido. Configura MONGO_URI o MONGO_URL en las variables de entorno."
+        );
+    }
+
+    const dbName = process.env.MONGO_DB_NAME || "aprobaciones_history";
+
+    return { uri, dbName };
+}
+
 export async function getMongoDb(): Promise<Db> {
     if (db) return db;
 
-    const uri = process.env.MONGO_URI!;
-    const dbName = process.env.MONGO_DB_NAME!;
+    const { uri, dbName } = getMongoConfig();
 
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(dbName);
+    mongo = new MongoClient(uri);
+    await mongo.connect();
+    db = mongo.db(dbName);
 
     return db;
 }
@@ -50,4 +67,5 @@ export async function initMongoIndexes() {
         { key: { actorId: 1, createdAt: -1 } },
         { key: { createdAt: -1 } },
     ]);
+    console.info("[mongo] Índices de historial inicializados correctamente");
 }

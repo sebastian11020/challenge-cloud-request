@@ -15,8 +15,6 @@ import RequestTypesPage from './pages/RequestTypesPage';
 import ApproverRequestsPage from './pages/ApproverRequestsPage';
 import { HistoryPage } from './pages/HistoryPage';
 import NotFound from './pages/NotFound';
-
-// 👇 IMPORTA ToastContainer Y EL CSS AQUÍ
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

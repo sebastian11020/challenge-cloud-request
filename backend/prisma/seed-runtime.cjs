@@ -1,28 +1,21 @@
-import "dotenv/config";
-import { PrismaClient, UserRole, RequestStatus } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+const { PrismaClient, UserRole, RequestStatus } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+const { Pool } = require("pg");
 
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-    throw new Error("DATABASE_URL no está definida en el entorno");
+    console.error("[seed] DATABASE_URL no está definida");
+    process.exit(1);
 }
 
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({
-    adapter,
-});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-    const usersData: {
-        username: string;
-        email: string;
-        displayName: string;
-        role: UserRole;
-    }[] = [
+    console.log("[seed] Iniciando seed de datos iniciales...");
+    const usersData = [
         {
             username: "sebastian.daza",
             email: "sebastiandaza792@gmail.com",
@@ -91,7 +84,6 @@ async function main() {
             description: "Otros tipos de solicitud no categorizados.",
         },
     ];
-
     for (const data of requestTypesData) {
         await prisma.requestType.upsert({
             where: { code: data.code },
@@ -103,8 +95,7 @@ async function main() {
             create: data,
         });
     }
-
-    console.log("✅ Tipos de solicitud sembrados correctamente");
+    console.log("[seed] ✅ Tipos de solicitud sembrados correctamente");
 
     for (const data of usersData) {
         await prisma.user.upsert({
@@ -114,11 +105,16 @@ async function main() {
                 displayName: data.displayName,
                 role: data.role,
             },
-            create: data,
+            create: {
+                username: data.username,
+                email: data.email,
+                displayName: data.displayName,
+                role: data.role,
+            },
         });
     }
+    console.log("[seed] ✅ Usuarios sembrados correctamente");
 
-    console.log("✅ Usuarios sembrados correctamente");
     const [tipoAcceso, tipoDespliegue, tipoVpn] = await Promise.all([
         prisma.requestType.findUnique({ where: { code: "ACCESO_SISTEMA" } }),
         prisma.requestType.findUnique({ where: { code: "DESPLIEGUE_APP" } }),
@@ -133,11 +129,12 @@ async function main() {
     ]);
 
     if (!tipoAcceso || !tipoDespliegue || !tipoVpn) {
-        throw new Error("Faltan tipos de solicitud al sembrar datos");
+        throw new Error("[seed] Faltan tipos de solicitud al sembrar datos");
     }
     if (!sebastian || !andrea || !carlos || !laura) {
-        throw new Error("Faltan usuarios al sembrar datos");
+        throw new Error("[seed] Faltan usuarios al sembrar datos");
     }
+
     const requestsData = [
         {
             publicId: "REQ-20250001",
@@ -153,7 +150,8 @@ async function main() {
                     actorId: sebastian.id,
                     previousStatus: null,
                     newStatus: RequestStatus.PENDIENTE,
-                    comment: "Solicitud creada según requerimiento del área contable.",
+                    comment:
+                        "Solicitud creada según requerimiento del área contable.",
                 },
             ],
         },
@@ -209,7 +207,7 @@ async function main() {
                 },
             ],
         },
-    ] as const;
+    ];
 
     for (const data of requestsData) {
         const existing = await prisma.request.findUnique({
@@ -241,14 +239,21 @@ async function main() {
         });
     }
 
-    console.log("✅ Solicitudes de ejemplo sembradas correctamente");
+    console.log("[seed] ✅ Solicitudes de ejemplo sembradas correctamente");
 }
 
 main()
-    .catch((e) => {
-        console.error("❌ Error ejecutando seed:", e);
-        process.exit(1);
+    .then(async () => {
+        console.log("[seed] Seed completada ✅");
+        await prisma.$disconnect();
+        await pool.end();
+        process.exit(0);
     })
-    .finally(async () => {
-        prisma.$disconnect();
+    .catch(async (err) => {
+        console.error("[seed] Error ejecutando seed:", err);
+        try {
+            await prisma.$disconnect();
+            await pool.end();
+        } catch (e) {}
+        process.exit(1);
     });

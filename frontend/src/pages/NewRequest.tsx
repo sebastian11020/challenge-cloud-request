@@ -81,6 +81,7 @@ export default function NewRequest() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      console.log(res);
       if (res.ok) {
         toast.success('Solicitud creada correctamente');
       } else {

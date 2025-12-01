@@ -1,9 +1,10 @@
+// src/services/history.service.ts
 import {
     getHistoryCollection,
-    RequestHistoryAction,
-    RequestHistoryEvent,
-    RequestHistoryRole,
-} from "../mongo/client";
+    type RequestHistoryAction,
+    type RequestHistoryEvent,
+    type RequestHistoryRole,
+} from "../../db/mongo";
 
 interface LogEventInput {
     requestId: number;
@@ -34,13 +35,9 @@ export async function logRequestEvent(input: LogEventInput): Promise<void> {
     await collection.insertOne(event);
 }
 
-// Para el rol auditor / historial completo
 export async function getHistoryByRequestId(requestId: number) {
     const collection = await getHistoryCollection();
-    return collection
-        .find({ requestId })
-        .sort({ createdAt: 1 })
-        .toArray();
+    return collection.find({ requestId }).sort({ createdAt: 1 }).toArray();
 }
 
 export interface HistoryFilters {
@@ -53,14 +50,21 @@ export interface HistoryFilters {
 export async function getHistory(filters: HistoryFilters = {}) {
     const collection = await getHistoryCollection();
 
-    const query: any = {};
-    if (typeof filters.actorId === "number") query.actorId = filters.actorId;
-    if (filters.action) query.action = filters.action;
+    const query: Record<string, unknown> = {};
+
+    if (typeof filters.actorId === "number") {
+        query.actorId = filters.actorId;
+    }
+
+    if (filters.action) {
+        query.action = filters.action;
+    }
 
     if (filters.from || filters.to) {
-        query.createdAt = {};
-        if (filters.from) query.createdAt.$gte = filters.from;
-        if (filters.to) query.createdAt.$lte = filters.to;
+        const createdAt: Record<string, Date> = {};
+        if (filters.from) createdAt.$gte = filters.from;
+        if (filters.to) createdAt.$lte = filters.to;
+        query.createdAt = createdAt;
     }
 
     return collection.find(query).sort({ createdAt: -1 }).toArray();

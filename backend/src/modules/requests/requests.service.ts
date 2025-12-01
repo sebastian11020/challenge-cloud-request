@@ -1,11 +1,11 @@
-import { prisma } from "../prisma/client";
-import type { CreateRequestDto } from "../dto/createRequest.dto";
+import { prisma } from "../../db/prisma";
+import type { CreateRequestDto } from "./dto/createRequest.dto";
 import { RequestStatus } from "@prisma/client";
 import {
     sendNewRequestNotificationEmail,
     sendRequestStatusChangeEmail,
-} from "./email.service";
-import { logRequestEvent } from "./history.service";
+} from "../../shared/email/email.service";
+import { logRequestEvent } from "../history/history.service";
 
 interface RequestStatsFilters {
     applicantId?: number;
@@ -76,13 +76,10 @@ export async function createRequest(input: CreateRequestDto) {
         },
     });
 
-    // 🔎 Identificador legible del actor para Mongo (ajusta según tu modelo User)
     const applicantIdentifier =
         (applicant as any).email ??
         (applicant as any).username ??
         `user-${applicant.id}`;
-
-    // 🧾 Historial en Mongo
     await logRequestEvent({
         requestId: request.id,
         action: "CREATED",
@@ -239,14 +236,12 @@ export async function changeRequestStatus(params: {
         },
     });
 
-    // 🔎 Determinar el usuario actor (por ahora asumimos que siempre es el responsable)
     const actorUser = updated.responsible;
     const actorIdentifier =
         (actorUser as any).email ??
         (actorUser as any).username ??
         `user-${actorUser.id}`;
 
-    // 🧾 Historial en Mongo
     await logRequestEvent({
         requestId: updated.id,
         action: "STATUS_CHANGED",
