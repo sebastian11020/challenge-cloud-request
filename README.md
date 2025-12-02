@@ -55,11 +55,12 @@ docker ps
 Por seguridad, los .env NO están incluidos.
 Debes crearlos manualmente:
 
+## Backend - backend/.env
+
 ```bash
 DATABASE_URL=postgresql://app_user:app_password@localhost:5432/aprobaciones_db?schema=public
-
 MONGO_URL=mongodb://admin:admin123@localhost:27017/aprobaciones_history?authSource=admin
-
+MONGO_DB_NAME=approvals_db
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USER=TU_CORREO@gmail.com
@@ -94,6 +95,7 @@ Volver al backend:
 ```bash
 cd ../backend
 npx prisma migrate deploy
+npx prisma generate
 npx prisma db seed
 ```
 Esto:
