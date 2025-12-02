@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: app_user
       POSTGRES_PASSWORD: app_password
       POSTGRES_DB: aprobaciones_db
+      TZ: America/Bogota
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,6 +22,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
+      TZ: America/Bogota
     volumes:
       - mongo_data:/data/db
     networks:
@@ -43,6 +45,7 @@ services:
       MAIL_USER: TU_CORREO@gmail.com
       MAIL_PASS: TU_CONTRASEÑA_DE_APLICACION
       MAIL_FROM: "Flujo de Aprobaciones <TU_CORREO@gmail.com>"
+      TZ: America/Bogota
     networks:
       - app-network
     command: >
@@ -64,6 +67,7 @@ services:
       - "80:80"
     environment:
       VITE_API_URL: http://backend:4000
+      TZ: America/Bogota
     networks:
       - app-network
 
