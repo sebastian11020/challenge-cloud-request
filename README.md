@@ -27,7 +27,7 @@ Asegúrate de tener instalado:
 ### Clonar el repositorio
 
 ```bash
-git clone https://github.com/usuario/flujo-aprobaciones.git
+git clone https://github.com/sebastian11020/challenge-cloud-request.git
 ```
 ### Configurar credenciales SMTP
 
