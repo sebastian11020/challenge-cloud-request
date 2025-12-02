@@ -5,6 +5,29 @@ import {
     type HistoryFilters,
 } from "./history.service";
 
+function parseLocalDate(dateStr: string, endOfDay = false): Date | null {
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return null;
+
+    const [yearStr, monthStr, dayStr] = parts;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+
+    if (
+        Number.isNaN(year) ||
+        Number.isNaN(month) ||
+        Number.isNaN(day)
+    ) {
+        return null;
+    }
+
+    if (endOfDay) {
+        return new Date(year, month - 1, day, 23, 59, 59, 999);
+    }
+    return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
 export const listHistory = async (
     req: Request,
     res: Response,
@@ -26,21 +49,22 @@ export const listHistory = async (
             filters.action = action as HistoryFilters["action"];
         }
 
-        if (from || to) {
-            if (from && typeof from === "string" && !Number.isNaN(Date.parse(from))) {
-                filters.from = new Date(from);
-            }
-            if (to && typeof to === "string" && !Number.isNaN(Date.parse(to))) {
-                filters.to = new Date(to);
-            }
+        if (typeof from === "string") {
+            const fromDate = parseLocalDate(from, false);
+            if (fromDate) filters.from = fromDate;
         }
 
+        if (typeof to === "string") {
+            const toDate = parseLocalDate(to, true);
+            if (toDate) filters.to = toDate;
+        }
         const events = await getHistory(filters);
         return res.json(events);
     } catch (err) {
         return next(err);
     }
 };
+
 
 export const listHistoryByRequest = async (
     req: Request,
