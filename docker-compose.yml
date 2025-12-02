@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  db:
+  postgres:
     image: postgres:16
     container_name: aprobaciones-postgres
     restart: unless-stopped
@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: app_user
       POSTGRES_PASSWORD: app_password
       POSTGRES_DB: aprobaciones_db
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,10 +21,49 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aprobaciones-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - mongo
+    environment:
+      DATABASE_URL: postgresql://app_user:app_password@postgres:5432/aprobaciones_db?schema=public
+      MONGO_URL: mongodb://admin:admin123@mongo:27017/aprobaciones_history?authSource=admin
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USER: TU_CORREO@gmail.com
+      MAIL_PASS: TU_CONTRASEÑA_DE_APLICACION
+      MAIL_FROM: "Flujo de Aprobaciones <TU_CORREO@gmail.com>"
+    networks:
+      - app-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node prisma/seed-runtime.cjs &&
+        node dist/app.js
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aprobaciones-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    environment:
+      VITE_API_URL: http://backend:4000
     networks:
       - app-network
 
